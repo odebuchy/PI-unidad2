@@ -5,6 +5,8 @@ import Register from './src/screens/Register';
 import Login from './src/screens/Login';
 
 
+const Stack = createNativeStackNavigator()
+
 export default function App() {
   return (
     <NavigationContainer>
@@ -15,4 +17,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-const Stack = createNativeStackNavigator();

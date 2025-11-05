@@ -1,9 +1,12 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { FontAwesome } from '@expo/vector-icons';
+import Entypo from '@expo/vector-icons/Entypo';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import Home from '../screens/Home';
 import Profile from '../screens/Profile';
+import NuevoPost from '../screens/Post';
 
 const Tab = createBottomTabNavigator();
 
@@ -27,6 +30,14 @@ function Nav() {
           tabBarIcon: ({ size, color }) => (
             <FontAwesome name="user" size={size} color={color} />
           ),
+        }}
+      />
+      <Tab.Screen
+        name="Nuevo Post"
+        component={NuevoPost}
+        options={{
+          headerShown: false,
+          tabBarIcon: () => <Entypo name="plus" size={24} color="black" />,
         }}
       />
     </Tab.Navigator>

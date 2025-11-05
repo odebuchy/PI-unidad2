@@ -8,6 +8,7 @@ class NuevoPost extends Component {
     this.state = {
       posting: false,
       error: '',
+      texto: ""
     };
   }
 
@@ -19,17 +20,18 @@ class NuevoPost extends Component {
 
     this.setState({ posting: true, error: '' });
 
-    const text = 'poste nuevo';
+  
 
     db.collection('posts')
       .add({
-        text,
+        text: this.state.texto,
         owner: auth.currentUser.email,
         createdAt: Date.now(),
+        likes: []
       })
       .then(() => {
         this.setState({ posting: false, error: '' });
-        // opcional: this.props.navigation?.navigate('HomeMenu');
+        this.props.navigation?.navigate('Home');
       })
       .catch(() => {
         this.setState({ posting: false, error: 'No se pudo crear el post.' });
@@ -40,6 +42,8 @@ class NuevoPost extends Component {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Nuevo post</Text>
+
+        <TextInput onChangeText={(text)=> this.setState({texto: text})} value= {this.state.texto} placeholder="Escribi tu mensaje"/>
 
         {!!this.state.error && <Text style={styles.error}>{this.state.error}</Text>}
 

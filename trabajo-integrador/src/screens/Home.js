@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { db, auth } from '../firebase/Config';
+import Posteo from '../components/Posteo';
 
 
 class Home extends Component {
@@ -19,14 +20,6 @@ class Home extends Component {
     this.setState({ loading: false }); 
   }
 
-  renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.user}>{item.userEmail ?? '(usuario)'}</Text>
-      <Text style={styles.text}>{item.text ?? '(sin contenido)'}</Text>
-      <Text style={styles.meta}>❤️ {Array.isArray(item.likes) ? item.likes.length : 0}</Text>
-    </View>
-  );
-
   render() {
     const { posts, loading } = this.state;
     return (
@@ -38,7 +31,7 @@ class Home extends Component {
           <FlatList
             data={posts}
             keyExtractor={(it) => it.id}
-            renderItem={this.renderItem}
+            renderItem={({item})=> <Posteo data={item} screen= "Home"/>}
             ListEmptyComponent={<Text>No hay posts aún.</Text>}
           />
         )}

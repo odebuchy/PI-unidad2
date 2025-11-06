@@ -6,7 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import Home from '../screens/Home';
 import Profile from '../screens/Profile';
-import NuevoPost from '../screens/Post';
+import Post from '../screens/Post';
 
 const Tab = createBottomTabNavigator();
 
@@ -19,7 +19,7 @@ function Nav() {
         component={Home}
         options={{
           tabBarIcon: ({ size, color }) => (
-            <FontAwesome name="home" size={size} color={color} />
+            <FontAwesome name="home" size={size} color="#4FC3F7" />
           ),
         }}
       />
@@ -28,16 +28,16 @@ function Nav() {
         component={Profile}
         options={{
           tabBarIcon: ({ size, color }) => (
-            <FontAwesome name="user" size={size} color={color} />
+            <FontAwesome name="user" size={size} color="#4FC3F7" />
           ),
         }}
       />
       <Tab.Screen
         name="Nuevo Post"
-        component={NuevoPost}
+        component={Post}
         options={{
           headerShown: false,
-          tabBarIcon: () => <Entypo name="plus" size={24} color="black" />,
+          tabBarIcon: () => <Entypo name="plus" size={24} color="#4FC3F7" />,
         }}
       />
     </Tab.Navigator>

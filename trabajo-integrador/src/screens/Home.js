@@ -1,38 +1,72 @@
-// src/screens/Home.js
 import React, { Component } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
 import { db, auth } from '../firebase/Config';
-import Posteo from '../components/Posteo';
-
+import Posteos from '../components/Posteos';
 
 class Home extends Component {
-  state = { posts: [], loading: true };
+  constructor(props) {
+    super(props);
+    this.state = { posts: [], loading: true };
+    this.unsubscribe = null;
+  }
 
   componentDidMount() {
-     if (!auth.currentUser) {
-       this.props.navigation.replace('Login');
-       return;
-     }
-     db.collection('posts').orderBy('createdAt', 'desc').onSnapshot(snap => {
-       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-       this.setState({ posts: data, loading: false });
-    });
-    this.setState({ loading: false }); 
+    if (!auth.currentUser) {
+      this.props.navigation.navigate('Login');
+      return;
+    }
+
+    db.collection('posts')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        (snap) => {
+          var data = snap.docs.map(function (d) {
+            return { id: d.id, data: d.data() };
+          });
+          this.setState({ posts: data, loading: false });
+        },
+        () => {
+          this.setState({ loading: false });
+        }
+      );
+  }
+
+  componentWillUnmount() {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
   }
 
   render() {
-    const { posts, loading } = this.state;
     return (
       <View style={styles.container}>
+        <View style={styles.header}>
+          <Image
+            source={require('../../assets/logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Sesh</Text>
+        </View>
+
         <Text style={styles.label}>Listado de posteos</Text>
-        {loading ? (
-          <Text>Cargando…</Text>
+
+        {this.state.loading ? (
+          <Text style={styles.loading}>Cargando…</Text>
         ) : (
           <FlatList
-            data={posts}
-            keyExtractor={(it) => it.id}
-            renderItem={({item})=> <Posteo data={item} screen= "Home"/>}
-            ListEmptyComponent={<Text>No hay posts aún.</Text>}
+            data={this.state.posts}
+            keyExtractor={function (it) { return it.id; }}
+            renderItem={({ item }) => (
+              <Posteos
+                data={item}
+                screen="Home"
+                onGoToComments={() =>
+                  this.props.navigation.navigate('Comments', { postId: item.id })
+                }
+              />
+            )}
+            ListEmptyComponent={<Text style={styles.empty}>No hay posts aún.</Text>}
           />
         )}
       </View>
@@ -41,12 +75,25 @@ class Home extends Component {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
-  label: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  card: { paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
-  user: { fontWeight: '600', marginBottom: 4 },
-  text: { marginBottom: 6 },
-  meta: { fontSize: 12, color: '#666' },
+  container: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingTop: 12 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4FC3F7',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#0288D1',
+  },
+  logo: { width: 28, height: 28, marginRight: 8 },
+  headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+
+  label: { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#0288D1' },
+  loading: { color: '#0288D1' },
+  empty: { color: '#666' },
 });
 
 export default Home;
+

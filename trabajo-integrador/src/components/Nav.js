@@ -11,35 +11,33 @@ import Post from '../screens/Post';
 const Tab = createBottomTabNavigator();
 
 function Nav() {
-
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen
         name="Home"
         component={Home}
         options={{
-          tabBarIcon: ({ size, color }) => (
-            <FontAwesome name="home" size={size} color="#4FC3F7" />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={Profile}
-        options={{
-          tabBarIcon: ({ size, color }) => (
-            <FontAwesome name="user" size={size} color="#4FC3F7" />
-          ),
+          tabBarShowLabel: false,
+          tabBarIcon: () => <FontAwesome name="home" size={24} color="#4FC3F7" />,
         }}
       />
       <Tab.Screen
         name="Nuevo Post"
         component={Post}
         options={{
-          headerShown: false,
+          tabBarShowLabel: false,
           tabBarIcon: () => <Entypo name="plus" size={24} color="#4FC3F7" />,
         }}
       />
+      <Tab.Screen
+        name="Profile"
+        component={Profile}
+        options={{
+          tabBarShowLabel: false,
+          tabBarIcon: () => <FontAwesome name="user" size={24} color="#4FC3F7" />,
+        }}
+      />
+      
     </Tab.Navigator>
   );
 }

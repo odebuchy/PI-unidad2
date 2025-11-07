@@ -17,8 +17,8 @@ class Login extends Component {
   }
 
   onSubmit() {
-    var email = this.state.email;
-    var password = this.state.password;
+    let email = this.state.email;
+    let password = this.state.password;
 
     if (!email.includes('@')) {
       this.setState({ error: 'Email mal formateado' });
@@ -45,7 +45,7 @@ class Login extends Component {
       <View style={styles.container}>
         <View style={styles.header}>
           <Image
-            source={require('../../assets/logo.png')} // ← AJUSTAR RUTA
+            source={require('../../assets/logo.png')} 
             style={styles.logo}
             resizeMode="contain"
           />

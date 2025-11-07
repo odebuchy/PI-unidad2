@@ -44,7 +44,6 @@ class Post extends Component {
   render() {
     return (
       <View style={styles.container}>
-        {/* Header Sesh */}
         <View style={styles.header}>
           <Image
             source={require('../../assets/logo.png')} 

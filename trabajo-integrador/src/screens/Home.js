@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { db, auth } from '../firebase/Config';
 import Posteos from '../components/Posteos';
 
@@ -16,47 +16,38 @@ class Home extends Component {
       return;
     }
 
-    db.collection('posts')
+      this.unsubscribe = db.collection('posts')
       .orderBy('createdAt', 'desc')
       .onSnapshot(
         (snap) => {
-          var data = snap.docs.map(function (d) {
-            return { id: d.id, data: d.data() };
-          });
+          const data = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
           this.setState({ posts: data, loading: false });
         },
-        () => {
-          this.setState({ loading: false });
-        }
+        () => this.setState({ loading: false })
       );
   }
 
   componentWillUnmount() {
-    if (this.unsubscribe) {
-      this.unsubscribe();
-    }
+    if (this.unsubscribe) this.unsubscribe();
   }
 
   render() {
+
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/logo.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.headerTitle}>Sesh</Text>
         </View>
 
         <Text style={styles.label}>Listado de posteos</Text>
 
         {this.state.loading ? (
-          <Text style={styles.loading}>Cargando…</Text>
+          <ActivityIndicator size="large" color="#0288D1" />
         ) : (
           <FlatList
             data={this.state.posts}
-            keyExtractor={function (it) { return it.id; }}
+            keyExtractor={(it) => it.id}
             renderItem={({ item }) => (
               <Posteos
                 data={item}
@@ -89,9 +80,7 @@ const styles = StyleSheet.create({
   },
   logo: { width: 28, height: 28, marginRight: 8 },
   headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-
   label: { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#0288D1' },
-  loading: { color: '#0288D1' },
   empty: { color: '#666' },
 });
 

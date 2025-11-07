@@ -11,9 +11,9 @@ class Posteos extends Component {
   }
 
   componentDidMount() {
-    var tieneData = this.props && this.props.data && this.props.data.data;
-    var likes = tieneData && this.props.data.data.likes ? this.props.data.data.likes : [];
-    var user = auth.currentUser ? auth.currentUser.email : null;
+    let tieneData = this.props && this.props.data && this.props.data.data;
+    let likes = tieneData && this.props.data.data.likes ? this.props.data.data.likes : [];
+    let user = auth.currentUser ? auth.currentUser.email : null;
 
     if (user && likes.includes(user)) {
       this.setState({ likeado: true });
@@ -23,10 +23,10 @@ class Posteos extends Component {
   }
 
   likear = () => {
-    var user = auth.currentUser ? auth.currentUser.email : null;
+    let user = auth.currentUser ? auth.currentUser.email : null;
     if (!user) return;
 
-    var postId = this.props && this.props.data ? this.props.data.id : null;
+    let postId = this.props && this.props.data ? this.props.data.id : null;
     if (!postId) return;
 
     if (this.state.likeado) {
@@ -45,11 +45,11 @@ class Posteos extends Component {
   };
 
   render() {
-    var tieneData = this.props && this.props.data && this.props.data.data;
-    var dato = tieneData ? this.props.data.data : {};
-    var owner = dato.owner ? dato.owner : '';
-    var text = dato.text ? dato.text : '';
-    var likes = dato.likes ? dato.likes : [];
+    let tieneData = this.props && this.props.data && this.props.data.data;
+    let dato = tieneData ? this.props.data.data : {};
+    let owner = dato.owner ? dato.owner : '';
+    let text = dato.text ? dato.text : '';
+    let likes = dato.likes ? dato.likes : [];
 
     return (
       <View style={styles.card}>
@@ -63,7 +63,8 @@ class Posteos extends Component {
                 {this.state.likeado ? '❤️' : '♡'} {likes.length}
               </Text>
             </Pressable>
-            <Pressable onPress={this.props.onGoToComments}>
+
+            <Pressable onPress={this.props.onGoToComments} style={styles.commentButton}>
               <Text style={styles.commentText}>Comentar</Text>
             </Pressable>
           </View>
@@ -90,7 +91,21 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, color: '#666' },
   actions: { flexDirection: 'row', marginTop: 6, gap: 16 },
   likeText: { fontSize: 12, color: '#0288D1', fontWeight: '600' },
-  commentText: { fontSize: 12, color: '#FFD700', fontWeight: '600' }, // dorado
+
+  commentButton: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E6C200',
+  },
+  commentText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#333',
+  },
 });
 
 export default Posteos;
+

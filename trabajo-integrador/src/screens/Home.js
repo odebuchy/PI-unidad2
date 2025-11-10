@@ -6,7 +6,7 @@ import Posteos from '../components/Posteos';
 class Home extends Component {
   constructor(props) {
     super(props);
-    this.state = { posts: [], loading: true };
+    this.state = { posts: [], loading: true, error: '' };
   }
 
   componentDidMount() {
@@ -18,12 +18,26 @@ class Home extends Component {
     db.collection('posts')
       .orderBy('createdAt', 'desc')
       .onSnapshot(
-        (snap) => {
-          const data = snap.docs.map(function (d) { return { id: d.id, data: d.data() }; });
-          this.setState({ posts: data, loading: false });
+        (docs) => {
+          let posts = [];
+          docs.forEach(function (doc) {
+            posts.push({
+              id: doc.id,
+              data: doc.data()
+            });
+          });
+          this.setState({
+            posts: posts,
+            loading: false
+          });
         },
-        () => this.setState({ loading: false })
+        () => this.setState({ loading: false, error: 'No se pudieron cargar los posts.' })
       );
+  }
+
+  onGoToComments(postId) {
+    if (!postId) return;
+    this.props.navigation.navigate('Comments', { postId: postId });
   }
 
   render() {
@@ -37,25 +51,23 @@ class Home extends Component {
         <Text style={styles.label}>Listado de posteos</Text>
 
         {this.state.loading ? (
-          <ActivityIndicator size="large" color="#0288D1" />
+          <ActivityIndicator size="large" color="#0288D1" style={styles.loader} />
+        ) : this.state.posts.length === 0 ? (
+          <Text style={styles.empty}>No hay posts aún.</Text>
         ) : (
           <FlatList
             data={this.state.posts}
-            keyExtractor={function (it) { return it.id; }}
-            renderItem={(obj) => {
-              let item = obj.item;
-              return (
-                <Posteos
-                  data={item}
-                  onGoToComments={() =>
-                    this.props.navigation.navigate('Comments', { postId: item.id })
-                  }
-                />
-              );
-            }}
-            ListEmptyComponent={<Text style={styles.empty}>No hay posts aún.</Text>}
+            keyExtractor={(item) => item.id}
+            renderItem={(obj) => (
+              <Posteos
+                data={obj.item}
+                onGoToComments={(id) => this.onGoToComments(id)}
+              />
+            )}
           />
         )}
+
+        {this.state.error ? <Text style={styles.error}>{this.state.error}</Text> : null}
       </View>
     );
   }
@@ -63,24 +75,17 @@ class Home extends Component {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingTop: 12 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4FC3F7',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#0288D1',
-  },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#4FC3F7', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#0288D1' },
   logo: { width: 28, height: 28, marginRight: 8 },
   headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
   label: { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#0288D1' },
+  loader: { marginTop: 8 },
   empty: { color: '#666' },
+  error: { color: '#D32F2F', marginTop: 8 }
 });
 
 export default Home;
+
 
 
 

@@ -17,28 +17,24 @@ class Login extends Component {
   }
 
   onSubmit() {
-    let email = this.state.email;
-    let password = this.state.password;
-
-    if (!email.includes('@')) {
-      this.setState({ error: 'Email mal formateado' });
-      return;
-    }
-    if (password.length < 6) {
-      this.setState({ error: 'La contraseña debe tener al menos 6 caracteres' });
-      return;
-    }
-
-    auth
-      .signInWithEmailAndPassword(email, password)
-      .then(() => {
-        this.setState({ loggedIn: true, error: '' });
-        this.props.navigation.navigate('Nav');
-      })
-      .catch((error) => {
-        this.setState({ error: error.message });
-      });
+  if (!this.state.email.includes('@')) {
+    this.setState({ error: 'Email mal formateado' });
+    return;
   }
+  if (this.state.password.length < 6) {
+    this.setState({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    return;
+  }
+
+  auth.signInWithEmailAndPassword(this.state.email, this.state.password)
+    .then(() => {
+      this.setState({ loggedIn: true, error: '' });
+      this.props.navigation.navigate('Nav');
+    })
+    .catch((error) => {
+      this.setState({ error: error.message });
+    });
+}
 
   render() {
     return (

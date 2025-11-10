@@ -20,8 +20,7 @@ class Post extends Component {
 
     this.setState({ posting: true, error: '' });
 
-    db.collection('posts')
-      .add({
+    db.collection('posts').add({
         text: this.state.texto,
         owner: auth.currentUser.email,
         createdAt: Date.now(),

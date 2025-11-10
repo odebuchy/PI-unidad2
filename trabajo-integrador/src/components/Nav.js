@@ -1,24 +1,12 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Home from '../screens/Home';
+import HomeStackScreen from './HomeStack';
 import Post from '../screens/Post';
 import Profile from '../screens/Profile';
-import Comments from '../screens/Comments';
 import Entypo from '@expo/vector-icons/Entypo';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const Tab = createBottomTabNavigator();
-const HomeStack = createNativeStackNavigator();
-
-function HomeStackScreen() {
-  return (
-    <HomeStack.Navigator>
-      <HomeStack.Screen name="Home" component={Home} options={{ headerShown: false }} />
-      <HomeStack.Screen name="Comments" component={Comments} options={{ title: 'Comentarios' }} />
-    </HomeStack.Navigator>
-  );
-}
 
 function Nav() {
   return (
@@ -55,3 +43,4 @@ function Nav() {
 }
 
 export default Nav;
+

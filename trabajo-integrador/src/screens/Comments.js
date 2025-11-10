@@ -9,67 +9,90 @@ class Comments extends Component {
   }
 
   componentDidMount() {
-    let postId = this.props.route.params.postId;
-    if (!postId) return;
+  let postId = this.props.route.params.postId;
 
-    db.collection('posts').doc(postId).get().then(doc => {
-      this.setState({ post: { id: doc.id, data: doc.data() }, loadingPost: false });
-    }).catch(() => this.setState({ loadingPost: false }));
-
-    db.collection('comments').where('postId', '==', postId).onSnapshot(
-      (snap) => {
-        let data = snap.docs.map(function (d) { return { id: d.id, data: d.data() }; });
-        this.setState({ comments: data, loadingComments: false });
-      },
-      () => this.setState({ loadingComments: false })
-    );
+  if (!postId) {
+    this.setState({ loadingPost: false, loadingComments: false });
+    return;
   }
+
+  db.collection('posts')
+    .doc(postId)
+    .onSnapshot((doc) => {
+        let post = {};
+        post.id = doc.id;
+        post.data = doc.data();
+
+      this.setState({
+        post: post,
+        loadingPost: false
+      });
+    });
+
+  db.collection('comments')
+    .where('postId', '==', postId)
+    .onSnapshot((docs) => {
+      let comments = [];
+
+       docs.forEach((doc) => {
+          comments.push({
+            id: doc.id,
+            data: doc.data()
+          });
+        });
+
+      this.setState({
+        comments: comments,
+        loadingComments: false
+      });
+    });
+}
 
   onSubmit() {
     let postId = this.props.route.params.postId;
-    if (!auth.currentUser || !postId || !this.state.text) return;
+    if (!postId) return;
 
     db.collection('comments').add({
       postId: postId,
       owner: auth.currentUser.email,
       text: this.state.text,
-      createdAt: Date.now(),
+      createdAt: Date.now()
     }).then(() => this.setState({ text: '' }));
   }
 
   renderHeader() {
-    let p = this.state.post ? this.state.post.data : {};
+    if (!this.state.post) return null;
+
     return (
-      <View style={styles.postCard}>
-        <Text style={styles.owner}>{p.owner}</Text>
-        <Text style={styles.text}>{p.text}</Text>
-      </View>
+        <View style={styles.postCard}>
+        <Text style={styles.owner}>{this.state.post.data.owner}</Text>
+        <Text style={styles.text}>{this.state.post.data.text}</Text>
+        </View>
     );
   }
 
   render() {
     return (
       <View style={styles.container}>
-        {this.state.loadingPost ? <ActivityIndicator style={{ marginVertical: 12 }} /> : this.renderHeader()}
+        {this.state.loadingPost ? <ActivityIndicator style={styles.loader} /> : this.renderHeader()}
+
         {this.state.loadingComments ? (
-          <ActivityIndicator style={{ marginVertical: 12 }} />
+          <ActivityIndicator style={styles.loader} />
         ) : (
           <FlatList
             data={this.state.comments}
-            keyExtractor={function (it) { return it.id; }}
-            renderItem={function (obj) {
-              let item = obj.item;
-              return (
-                <View style={styles.commentCard}>
-                  <Text style={styles.commentOwner}>{item.data.owner}</Text>
-                  <Text style={styles.commentText}>{item.data.text}</Text>
-                </View>
-              );
-            }}
+            keyExtractor={(it) => it.id}
+            renderItem={(obj) => (
+              <View style={styles.commentCard}>
+                <Text style={styles.commentOwner}>{obj.item.data.owner}</Text>
+                <Text style={styles.commentText}>{obj.item.data.text}</Text>
+              </View>
+            )}
             ListEmptyComponent={<Text style={styles.empty}>Sé el primero en comentar.</Text>}
-            contentContainerStyle={{ paddingBottom: 12 }}
+            contentContainerStyle={styles.listContent}
           />
         )}
+
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
@@ -81,7 +104,8 @@ class Comments extends Component {
             <Text style={styles.sendText}>Publicar</Text>
           </Pressable>
         </View>
-        {!!this.state.error && <Text style={styles.error}>{this.state.error}</Text>}
+
+        {this.state.error ? <Text style={styles.error}>{this.state.error}</Text> : null}
       </View>
     );
   }
@@ -89,6 +113,8 @@ class Comments extends Component {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF', padding: 16 },
+  loader: { marginVertical: 12 },
+  listContent: { paddingBottom: 12 },
   postCard: { borderWidth: 1, borderColor: '#4FC3F7', borderRadius: 8, padding: 12, backgroundColor: '#F9FCFF', marginBottom: 12 },
   owner: { color: '#0288D1', fontWeight: '700', marginBottom: 6 },
   text: { color: '#333' },
@@ -100,9 +126,10 @@ const styles = StyleSheet.create({
   sendBtn: { marginLeft: 8, backgroundColor: '#4FC3F7', paddingHorizontal: 10, paddingVertical: 10, borderRadius: 6, borderWidth: 1, borderColor: '#0288D1', alignItems: 'center' },
   sendText: { color: '#fff', fontWeight: '600' },
   empty: { textAlign: 'center', color: '#999', marginVertical: 8 },
-  error: { color: '#D32F2F', marginTop: 6 },
+  error: { color: '#D32F2F', marginTop: 6 }
 });
 
 export default Comments;
+
 
 

@@ -11,22 +11,19 @@ class Posteos extends Component {
   }
 
   componentDidMount() {
-    let tieneData = this.props && this.props.data && this.props.data.data;
-    let likes = tieneData && this.props.data.data.likes ? this.props.data.data.likes : [];
-    let user = auth.currentUser ? auth.currentUser.email : null;
-
-    if (user && likes.includes(user)) {
-      this.setState({ likeado: true });
-    }
-    this.setState({ likesCount: likes.length });
+  let likes = [];
+  if (this.props.data && this.props.data.data && this.props.data.data.likes) {
+    likes = this.props.data.data.likes; //un data es por props y el otro de snapshot
   }
+  this.setState({
+    likeado: likes.includes(auth.currentUser.email),
+    likesCount: likes.length
+  });
+}
+
 
   likear() {
-    let user = auth.currentUser ? auth.currentUser.email : null;
-    if (!user) return;
-
-    let postId = this.props && this.props.data ? this.props.data.id : null;
-    if (!postId) return;
+    if (!this.props.data || !this.props.data.id) return;
 
     if (this.state.likeado) {
       db.collection('posts')

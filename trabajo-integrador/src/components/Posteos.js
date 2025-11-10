@@ -23,7 +23,10 @@ class Posteos extends Component {
 
 
   likear() {
-    if (!this.props.data || !this.props.data.id) return;
+    const user = auth.currentUser ? auth.currentUser.email : null;
+    const postId = this.props.data ? this.props.data.id : null;
+
+  if (!user || !postId) return; 
 
     if (this.state.likeado) {
       db.collection('posts')

@@ -1,108 +1,108 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
-import { auth, db } from '../firebase/Config';
-import firebase from 'firebase';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import { db, auth } from '../firebase/Config';
 
 class Comments extends Component {
   constructor(props) {
     super(props);
-    this.state = { loading: true, text: '', comments: [], error: '' };
-    this.unsub = null;
+    this.state = { loadingPost: true, loadingComments: true, post: null, comments: [], text: '', error: '' };
   }
 
   componentDidMount() {
-    const postId = this.props.route.params?.postId;
-    if (!postId) return this.setState({ error: 'Falta postId', loading: false });
+    let postId = this.props.route.params.postId;
+    if (!postId) return;
 
-    this.unsub = db
-      .collection('posts')
-      .doc(postId)
-      .collection('comments')
-      .orderBy('createdAt', 'asc')
-      .onSnapshot(
-        (snap) => {
-          const comments = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
-          this.setState({ comments, loading: false });
-        },
-        (e) => this.setState({ error: e.message, loading: false })
-      );
+    db.collection('posts').doc(postId).get().then(doc => {
+      this.setState({ post: { id: doc.id, data: doc.data() }, loadingPost: false });
+    }).catch(() => this.setState({ loadingPost: false }));
+
+    db.collection('comments').where('postId', '==', postId).onSnapshot(
+      (snap) => {
+        let data = snap.docs.map(function (d) { return { id: d.id, data: d.data() }; });
+        this.setState({ comments: data, loadingComments: false });
+      },
+      () => this.setState({ loadingComments: false })
+    );
   }
 
-  componentWillUnmount() {
-    if (this.unsub) this.unsub();
+  onSubmit() {
+    let postId = this.props.route.params.postId;
+    if (!auth.currentUser || !postId || !this.state.text) return;
+
+    db.collection('comments').add({
+      postId: postId,
+      owner: auth.currentUser.email,
+      text: this.state.text,
+      createdAt: Date.now(),
+    }).then(() => this.setState({ text: '' }));
   }
 
-  onAddComment = () => {
-    const postId = this.props.route.params?.postId;
-    const user = auth.currentUser;
-    const text = (this.state.text || '').trim();
-    if (!user || !postId || !text) return;
-
-    db.collection('posts')
-      .doc(postId)
-      .collection('comments')
-      .add({
-        text,
-        ownerUid: user.uid,
-        ownerEmail: user.email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      })
-      .then(() => this.setState({ text: '' }))
-      .catch((e) => this.setState({ error: e.message }));
-  };
+  renderHeader() {
+    let p = this.state.post ? this.state.post.data : {};
+    return (
+      <View style={styles.postCard}>
+        <Text style={styles.owner}>{p.owner}</Text>
+        <Text style={styles.text}>{p.text}</Text>
+      </View>
+    );
+  }
 
   render() {
-    const { loading, comments, text, error } = this.state;
-
     return (
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.container}>
-          {loading ? (
-            <ActivityIndicator style={{ marginTop: 16 }} />
-          ) : comments.length === 0 ? (
-            <Text style={styles.empty}>Todavía no hay comentarios. ¡Sé el primero!</Text>
-          ) : (
-            <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
-              {comments.map((c) => (
-                <View key={c.id} style={styles.commentCard}>
-                  <Text style={styles.commentOwner}>{c.data.ownerEmail || 'usuario'}</Text>
-                  <Text style={styles.commentText}>{c.data.text}</Text>
+      <View style={styles.container}>
+        {this.state.loadingPost ? <ActivityIndicator style={{ marginVertical: 12 }} /> : this.renderHeader()}
+        {this.state.loadingComments ? (
+          <ActivityIndicator style={{ marginVertical: 12 }} />
+        ) : (
+          <FlatList
+            data={this.state.comments}
+            keyExtractor={function (it) { return it.id; }}
+            renderItem={function (obj) {
+              let item = obj.item;
+              return (
+                <View style={styles.commentCard}>
+                  <Text style={styles.commentOwner}>{item.data.owner}</Text>
+                  <Text style={styles.commentText}>{item.data.text}</Text>
                 </View>
-              ))}
-            </ScrollView>
-          )}
-
-          {!!error && <Text style={styles.error}>{error}</Text>}
-
-          <View style={styles.inputRow}>
-            <TextInput
-              placeholder="Escribí un comentario..."
-              value={text}
-              onChangeText={(t) => this.setState({ text: t })}
-              style={styles.input}
-              multiline
-            />
-            <Pressable style={styles.sendBtn} onPress={this.onAddComment}>
-              <Text style={styles.sendText}>Enviar</Text>
-            </Pressable>
-          </View>
+              );
+            }}
+            ListEmptyComponent={<Text style={styles.empty}>Sé el primero en comentar.</Text>}
+            contentContainerStyle={{ paddingBottom: 12 }}
+          />
+        )}
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Escribe un comentario..."
+            value={this.state.text}
+            onChangeText={(t) => this.setState({ text: t })}
+          />
+          <Pressable style={styles.sendBtn} onPress={() => this.onSubmit()}>
+            <Text style={styles.sendText}>Publicar</Text>
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
+        {!!this.state.error && <Text style={styles.error}>{this.state.error}</Text>}
+      </View>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  empty: { textAlign: 'center', color: '#999', marginVertical: 16 },
-  error: { color: 'red', marginTop: 8 },
-  commentCard: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  commentOwner: { fontWeight: '700', color: '#4FC3F7' },
-  commentText: { marginTop: 2, color: '#222' },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', marginTop: 8 },
-  input: { flex: 1, minHeight: 40, maxHeight: 120, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
-  sendBtn: { backgroundColor: '#4FC3F7', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, marginLeft: 8 },
-  sendText: { color: '#fff', fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#FFFFFF', padding: 16 },
+  postCard: { borderWidth: 1, borderColor: '#4FC3F7', borderRadius: 8, padding: 12, backgroundColor: '#F9FCFF', marginBottom: 12 },
+  owner: { color: '#0288D1', fontWeight: '700', marginBottom: 6 },
+  text: { color: '#333' },
+  commentCard: { borderWidth: 1, borderColor: '#E3F2FD', borderRadius: 8, padding: 10, marginBottom: 8, backgroundColor: '#fff' },
+  commentOwner: { color: '#0288D1', fontWeight: '700' },
+  commentText: { color: '#333', marginTop: 2 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  input: { flex: 1, borderWidth: 1, borderColor: '#4FC3F7', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#F9FCFF' },
+  sendBtn: { marginLeft: 8, backgroundColor: '#4FC3F7', paddingHorizontal: 10, paddingVertical: 10, borderRadius: 6, borderWidth: 1, borderColor: '#0288D1', alignItems: 'center' },
+  sendText: { color: '#fff', fontWeight: '600' },
+  empty: { textAlign: 'center', color: '#999', marginVertical: 8 },
+  error: { color: '#D32F2F', marginTop: 6 },
 });
 
 export default Comments;
+
+

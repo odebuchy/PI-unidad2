@@ -45,7 +45,7 @@ class Login extends Component {
       <View style={styles.container}>
         <View style={styles.header}>
           <Image
-            source={require('../../assets/logo.png')} 
+            source={require('../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -113,5 +113,6 @@ const styles = StyleSheet.create({
 });
 
 export default Login;
+
 
 

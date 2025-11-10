@@ -7,7 +7,6 @@ class Home extends Component {
   constructor(props) {
     super(props);
     this.state = { posts: [], loading: true };
-    this.unsubscribe = null;
   }
 
   componentDidMount() {
@@ -16,23 +15,18 @@ class Home extends Component {
       return;
     }
 
-      this.unsubscribe = db.collection('posts')
+    db.collection('posts')
       .orderBy('createdAt', 'desc')
       .onSnapshot(
         (snap) => {
-          const data = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
+          const data = snap.docs.map(function (d) { return { id: d.id, data: d.data() }; });
           this.setState({ posts: data, loading: false });
         },
         () => this.setState({ loading: false })
       );
   }
 
-  componentWillUnmount() {
-    if (this.unsubscribe) this.unsubscribe();
-  }
-
   render() {
-
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -47,16 +41,18 @@ class Home extends Component {
         ) : (
           <FlatList
             data={this.state.posts}
-            keyExtractor={(it) => it.id}
-            renderItem={({ item }) => (
-              <Posteos
-                data={item}
-                screen="Home"
-                onGoToComments={() =>
-                  this.props.navigation.navigate('Comments', { postId: item.id })
-                }
-              />
-            )}
+            keyExtractor={function (it) { return it.id; }}
+            renderItem={(obj) => {
+              let item = obj.item;
+              return (
+                <Posteos
+                  data={item}
+                  onGoToComments={() =>
+                    this.props.navigation.navigate('Comments', { postId: item.id })
+                  }
+                />
+              );
+            }}
             ListEmptyComponent={<Text style={styles.empty}>No hay posts aún.</Text>}
           />
         )}
@@ -85,4 +81,6 @@ const styles = StyleSheet.create({
 });
 
 export default Home;
+
+
 

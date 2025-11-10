@@ -46,7 +46,7 @@ class Post extends Component {
       <View style={styles.container}>
         <View style={styles.header}>
           <Image
-            source={require('../../assets/logo.png')} 
+            source={require('../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -99,8 +99,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    minHeight: 80,
-    textAlignVertical: 'top',
     backgroundColor: '#F9FCFF',
   },
   button: {
@@ -118,5 +116,6 @@ const styles = StyleSheet.create({
 });
 
 export default Post;
+
 
 

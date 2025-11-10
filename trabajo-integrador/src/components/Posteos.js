@@ -7,7 +7,7 @@ import 'firebase/firestore';
 class Posteos extends Component {
   constructor(props) {
     super(props);
-    this.state = { likeado: false };
+    this.state = { likeado: false, likesCount: 0 };
   }
 
   componentDidMount() {
@@ -17,12 +17,11 @@ class Posteos extends Component {
 
     if (user && likes.includes(user)) {
       this.setState({ likeado: true });
-    } else {
-      this.setState({ likeado: false });
     }
+    this.setState({ likesCount: likes.length });
   }
 
-  likear = () => {
+  likear() {
     let user = auth.currentUser ? auth.currentUser.email : null;
     if (!user) return;
 
@@ -32,47 +31,44 @@ class Posteos extends Component {
     if (this.state.likeado) {
       db.collection('posts')
         .doc(postId)
-        .update({ likes: firebase.firestore.FieldValue.arrayRemove(user) })
-        .then(() => this.setState({ likeado: false }))
-        .catch(() => console.log('Error al quitar like'));
+        .update({
+          likes: firebase.firestore.FieldValue.arrayRemove(user)
+        })
+        .then(() => this.setState({ likeado: false, likesCount: this.state.likesCount - 1 }));
     } else {
       db.collection('posts')
         .doc(postId)
-        .update({ likes: firebase.firestore.FieldValue.arrayUnion(user) })
-        .then(() => this.setState({ likeado: true }))
-        .catch(() => console.log('Error al dar like'));
+        .update({
+          likes: firebase.firestore.FieldValue.arrayUnion(user)
+        })
+        .then(() => this.setState({ likeado: true, likesCount: this.state.likesCount + 1 }));
     }
-  };
+  }
 
   render() {
-    let tieneData = this.props && this.props.data && this.props.data.data;
-    let dato = tieneData ? this.props.data.data : {};
-    let owner = dato.owner ? dato.owner : '';
-    let text = dato.text ? dato.text : '';
-    let likes = dato.likes ? dato.likes : [];
+    let data = this.props.data.data;
 
     return (
       <View style={styles.card}>
-        <Text style={styles.user}>{owner}</Text>
-        <Text style={styles.text}>{text}</Text>
+        <Text style={styles.owner}>{data.owner}</Text>
+        <Text style={styles.text}>{data.text}</Text>
 
-        {this.props.screen === 'Home' ? (
-          <View style={styles.actions}>
-            <Pressable onPress={this.likear}>
-              <Text style={styles.likeText}>
-                {this.state.likeado ? '❤️' : '♡'} {likes.length}
-              </Text>
-            </Pressable>
-
-            <Pressable onPress={this.props.onGoToComments} style={styles.commentButton}>
-              <Text style={styles.commentText}>Comentar</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable>
-            <Text style={styles.meta}>borrar posteo</Text>
+        <View style={styles.actions}>
+          <Pressable style={styles.likeBtn} onPress={() => this.likear()}>
+            <Text style={styles.likeText}>
+              {this.state.likeado ? '💙 dislike' : '🤍 like'}
+            </Text>
           </Pressable>
-        )}
+
+          <Pressable
+            style={styles.commentBtn}
+            onPress={() => this.props.onGoToComments(this.props.data.id)}
+          >
+            <Text style={styles.commentText}> Comentar </Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.likesCount}>{this.state.likesCount} likes </Text>
       </View>
     );
   }
@@ -80,32 +76,24 @@ class Posteos extends Component {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderColor: '#e9e9e9',
-  },
-  user: { fontWeight: '700', marginBottom: 4, color: '#0288D1' },
-  text: { marginBottom: 6, color: '#333' },
-  meta: { fontSize: 12, color: '#666' },
-  actions: { flexDirection: 'row', marginTop: 6, gap: 16 },
-  likeText: { fontSize: 12, color: '#0288D1', fontWeight: '600' },
-
-  commentButton: {
-    backgroundColor: '#FFD700',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E6C200',
+    borderColor: '#4FC3F7',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#F9FCFF',
   },
-  commentText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#333',
-  },
+  owner: { color: '#0288D1', fontWeight: '700', marginBottom: 4 },
+  text: { color: '#333', marginBottom: 6 },
+  actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  likeBtn: { padding: 6, borderRadius: 6, backgroundColor: '#E1F5FE' },
+  likeText: { color: '#0288D1', fontWeight: '600' },
+  commentBtn: { padding: 6, borderRadius: 6, backgroundColor: '#B3E5FC' },
+  commentText: { color: '#01579B', fontWeight: '600' },
+  likesCount: { marginTop: 8, color: '#0288D1', fontWeight: '600' },
 });
 
 export default Posteos;
+
+
 

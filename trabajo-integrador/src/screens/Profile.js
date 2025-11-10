@@ -1,6 +1,5 @@
-// src/screens/Profile.js
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, FlatList } from 'react-native';
 import { auth, db } from '../firebase/Config';
 import Posteos from '../components/Posteos';
 
@@ -10,98 +9,98 @@ class Profile extends Component {
     this.state = {
       loadingUser: true,
       loadingPosts: true,
-      email: '',
       username: '',
       posts: [],
       error: ''
     };
-    this.postsUnsub = null; // para cortar el listener al salir
   }
 
   componentDidMount() {
-    const user = auth.currentUser;
-    if (!user) {
-      this.props.navigation.replace('Login');
-      return;
-    }
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        this.setState({ loadingUser: false, loadingPosts: false });
+        return;
+      }
 
-    const email = user.email;
-    this.setState({ email });
-
-    // 1) Traer username por email (en 'users' guardás 'email')
-    db.collection('users')
-      .where('email', '==', email)
-      .limit(1)
-      .get()
-      .then((qs) => {
-        let username = '';
-        qs.forEach((doc) => {
-          const data = doc.data() || {};
-          username = data.username || '';
-        });
-        this.setState({ username, loadingUser: false });
-      })
-      .catch((e) => this.setState({ error: e.message, loadingUser: false }));
-
-    // 2) Posts del usuario en tiempo real (sin orderBy → no requiere índice)
-    this.postsUnsub = db
-      .collection('posts')
-      .where('owner', '==', email)
-      .onSnapshot(
-        (snap) => {
-          const posts = snap.docs.map((doc) => ({ id: doc.id, data: doc.data() }));
-          // Orden local por createdAt (más nuevo primero)
-          posts.sort((a, b) => {
-            const av = a.data.createdAt?.toMillis ? a.data.createdAt.toMillis() : a.data.createdAt || 0;
-            const bv = b.data.createdAt?.toMillis ? b.data.createdAt.toMillis() : b.data.createdAt || 0;
-            return bv - av;
+      db.collection('users')
+        .where('email', '==', user.email)
+        .get()
+        .then((snapshot) => {
+          let usernameEncontrado = '';
+          snapshot.forEach(function (doc) {
+            let data = doc.data();
+            if (data.username) {
+              usernameEncontrado = data.username;
+            }
           });
-          this.setState({ posts, loadingPosts: false });
-        },
-        (e) => this.setState({ error: e.message, loadingPosts: false })
-      );
+          this.setState({ username: usernameEncontrado, loadingUser: false });
+        })
+        .catch((error) => this.setState({ error: error.message, loadingUser: false }));
+
+      db.collection('posts')
+        .where('owner', '==', user.email)
+        .onSnapshot(
+          (snapshot) => {
+            let arrayPosts = snapshot.docs.map(function (doc) {
+              return { id: doc.id, data: doc.data() };
+            });
+            this.setState({ posts: arrayPosts, loadingPosts: false });
+          },
+          (error) => this.setState({ error: error.message, loadingPosts: false })
+        );
+    });
   }
 
-  componentWillUnmount() {
-    if (this.postsUnsub) this.postsUnsub();
+  onLogout() {
+    auth.signOut()
+      .then(() => {
+        this.props.navigation.navigate('Login');
+      })
+      .catch((error) => this.setState({ error: error.message }));
   }
-
-  onLogout = () => {
-    auth
-      .signOut()
-      .then(() => this.props.navigation.replace('Login'))
-      .catch((e) => this.setState({ error: e.message }));
-  };
 
   render() {
-    const { loadingUser, loadingPosts, username, email, posts, error } = this.state;
-
     return (
       <View style={styles.container}>
-        {loadingUser ? (
+        {this.state.loadingUser ? (
           <ActivityIndicator style={{ marginVertical: 16 }} />
         ) : (
           <View style={styles.header}>
-            <Text style={styles.username}>{username || '(sin username)'}</Text>
-            <Text style={styles.email}>{email}</Text>
-            <Pressable style={styles.logoutBtn} onPress={this.onLogout}>
+            <Text style={styles.username}>
+              {this.state.username ? this.state.username : '(sin username)'}
+            </Text>
+            <Text style={styles.email}>{auth.currentUser ? auth.currentUser.email : ''}</Text>
+            <Pressable style={styles.logoutBtn} onPress={() => this.onLogout()}>
               <Text style={styles.logoutText}>Cerrar sesión</Text>
             </Pressable>
           </View>
         )}
 
-        {!!error && <Text style={styles.error}>{error}</Text>}
+        {this.state.error ? <Text style={styles.error}>{this.state.error}</Text> : null}
 
-        {loadingPosts ? (
+        {this.state.loadingPosts ? (
           <ActivityIndicator style={{ marginTop: 24 }} />
-        ) : posts.length === 0 ? (
+        ) : this.state.posts.length === 0 ? (
           <Text style={styles.empty}>Todavía no publicaste nada.</Text>
         ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
-            {posts.map((p) => (
-              <Posteos key={p.id} data={p} navigation={this.props.navigation} />
-            ))}
-          </ScrollView>
+          <FlatList
+            data={this.state.posts}
+            keyExtractor={function (item) { return item.id; }}
+            renderItem={(obj) => {
+              let item = obj.item;
+              return (
+                <Posteos
+                  data={item}
+                  onGoToComments={() =>
+                    this.props.navigation.navigate('HomeTab', {
+                      screen: 'Comments',
+                      params: { postId: item.id }
+                    })
+                  }
+                />
+              );
+            }}
+          />
         )}
       </View>
     );
@@ -116,7 +115,13 @@ const styles = StyleSheet.create({
   logoutBtn: { marginTop: 12, paddingVertical: 10, alignItems: 'center', borderRadius: 6, backgroundColor: '#0288D1' },
   logoutText: { color: '#fff', fontWeight: '600' },
   empty: { textAlign: 'center', marginTop: 32, color: '#999' },
-  error: { color: 'red', marginTop: 8 },
+  error: { color: 'red', marginTop: 8 }
 });
 
 export default Profile;
+
+
+
+
+
+

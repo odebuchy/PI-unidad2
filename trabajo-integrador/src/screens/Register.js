@@ -9,8 +9,7 @@ class Register extends Component {
   }
 
   onSubmit() {
-    auth
-      .createUserWithEmailAndPassword(this.state.email, this.state.password)
+    auth.createUserWithEmailAndPassword(this.state.email, this.state.password)
       .then(() => {
         return db.collection('users').add({
           email: this.state.email,
@@ -32,7 +31,7 @@ class Register extends Component {
       <View style={styles.container}>
         <View style={styles.header}>
           <Image
-            source={require('../../assets/logo.png')} 
+            source={require('../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
